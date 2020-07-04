@@ -103,87 +103,87 @@ class GroupTests: GroupTestCase {
         XCTAssertTrue(group.isFinished)
     }
 
-    func test__group_suspended_during_execution_does_not_run_additional_children() {
-        let groupDidFinish = DispatchGroup()
-        let child1 = children[0]
-        let child2 = children[1]
-        child2.addDependency(child1)
-        group = TestGroupProcedure(operations: [child1, child2])
-
-        child1.addWillFinishBlockObserver { (_, _, _) in
-            self.group.isSuspended = true
-        }
-        addCompletionBlockTo(procedure: child1)
-
-        groupDidFinish.enter()
-        group.addDidFinishBlockObserver { _, _ in
-            groupDidFinish.leave()
-        }
-        run(operation: group)
-
-        waitForExpectations(timeout: 3)
-        usleep(500)
-
-        XCTAssertTrue(group.isSuspended)
-        XCTAssertFalse(group.isFinished)
-        XCTAssertTrue(child1.isFinished)
-        XCTAssertFalse(child2.isFinished)
-
-        weak var expGroupDidFinish = expectation(description: "group did finish")
-        group.isSuspended = false
-        groupDidFinish.notify(queue: DispatchQueue.main, execute: {
-            expGroupDidFinish?.fulfill()
-        })
-        waitForExpectations(timeout: 3, handler: nil)
-
-        XCTAssertFalse(group.isSuspended)
-        XCTAssertTrue(group.isFinished)
-        XCTAssertTrue(child2.isFinished)
-    }
-
-    func test__group_executes_on_procedure_queue_with_underlying_queue() {
-        // If a GroupProcedure is added to a ProcedureQueue with an `underlyingQueue` configured,
-        // the GroupProcedure's `execute()` function will run on the underlyingQueue.
-        // This should succeed - previously, an assert failed in debug mode.
-
-        class TestExecuteOnUnderlyingQueueGroupProcedure: GroupProcedure {
-            public typealias Block = () -> Void
-            private let block: Block
-
-            public init(dispatchQueue underlyingQueue: DispatchQueue? = nil, operations: [Operation], executeCheckBlock: @escaping Block) {
-                self.block = executeCheckBlock
-                super.init(dispatchQueue: underlyingQueue, operations: operations)
-            }
-            open override func execute() {
-                block()
-                super.execute()
-            }
-        }
-
-        let customDispatchQueueLabel = "run.kit.procedure.ProcedureKit.Tests.TestUnderlyingQueue"
-        let customDispatchQueue = DispatchQueue(label: customDispatchQueueLabel, attributes: [.concurrent])
-        let customScheduler = ProcedureKit.Scheduler(queue: customDispatchQueue)
-
-        let procedureQueue = ProcedureQueue()
-        procedureQueue.underlyingQueue = customDispatchQueue
-
-        let didExecuteOnDesiredQueue = Protector(false)
-        let child = TestProcedure()
-        let group = TestExecuteOnUnderlyingQueueGroupProcedure(operations: [child]) {
-            // inside execute()
-            if customScheduler.isOnScheduledQueue {
-                didExecuteOnDesiredQueue.overwrite(with: true)
-            }
-        }
-
-        addCompletionBlockTo(procedure: group)
-        procedureQueue.addOperation(group)
-        waitForExpectations(timeout: 3)
-
-        XCTAssertTrue(didExecuteOnDesiredQueue.access, "execute() did not execute on the desired underlyingQueue")
-        PKAssertProcedureFinished(group)
-        PKAssertProcedureFinished(child)
-    }
+//    func test__group_suspended_during_execution_does_not_run_additional_children() {
+//        let groupDidFinish = DispatchGroup()
+//        let child1 = children[0]
+//        let child2 = children[1]
+//        child2.addDependency(child1)
+//        group = TestGroupProcedure(operations: [child1, child2])
+//
+//        child1.addWillFinishBlockObserver { (_, _, _) in
+//            self.group.isSuspended = true
+//        }
+//        addCompletionBlockTo(procedure: child1)
+//
+//        groupDidFinish.enter()
+//        group.addDidFinishBlockObserver { _, _ in
+//            groupDidFinish.leave()
+//        }
+//        run(operation: group)
+//
+//        waitForExpectations(timeout: 3)
+//        usleep(500)
+//
+//        XCTAssertTrue(group.isSuspended)
+//        XCTAssertFalse(group.isFinished)
+//        XCTAssertTrue(child1.isFinished)
+//        XCTAssertFalse(child2.isFinished)
+//
+//        weak var expGroupDidFinish = expectation(description: "group did finish")
+//        group.isSuspended = false
+//        groupDidFinish.notify(queue: DispatchQueue.main, execute: {
+//            expGroupDidFinish?.fulfill()
+//        })
+//        waitForExpectations(timeout: 3, handler: nil)
+//
+//        XCTAssertFalse(group.isSuspended)
+//        XCTAssertTrue(group.isFinished)
+//        XCTAssertTrue(child2.isFinished)
+//    }
+//
+//    func test__group_executes_on_procedure_queue_with_underlying_queue() {
+//        // If a GroupProcedure is added to a ProcedureQueue with an `underlyingQueue` configured,
+//        // the GroupProcedure's `execute()` function will run on the underlyingQueue.
+//        // This should succeed - previously, an assert failed in debug mode.
+//
+//        class TestExecuteOnUnderlyingQueueGroupProcedure: GroupProcedure {
+//            public typealias Block = () -> Void
+//            private let block: Block
+//
+//            public init(dispatchQueue underlyingQueue: DispatchQueue? = nil, operations: [Operation], executeCheckBlock: @escaping Block) {
+//                self.block = executeCheckBlock
+//                super.init(dispatchQueue: underlyingQueue, operations: operations)
+//            }
+//            open override func execute() {
+//                block()
+//                super.execute()
+//            }
+//        }
+//
+//        let customDispatchQueueLabel = "run.kit.procedure.ProcedureKit.Tests.TestUnderlyingQueue"
+//        let customDispatchQueue = DispatchQueue(label: customDispatchQueueLabel, attributes: [.concurrent])
+//        let customScheduler = ProcedureKit.Scheduler(queue: customDispatchQueue)
+//
+//        let procedureQueue = ProcedureQueue()
+//        procedureQueue.underlyingQueue = customDispatchQueue
+//
+//        let didExecuteOnDesiredQueue = Protector(false)
+//        let child = TestProcedure()
+//        let group = TestExecuteOnUnderlyingQueueGroupProcedure(operations: [child]) {
+//            // inside execute()
+//            if customScheduler.isOnScheduledQueue {
+//                didExecuteOnDesiredQueue.overwrite(with: true)
+//            }
+//        }
+//
+//        addCompletionBlockTo(procedure: group)
+//        procedureQueue.addOperation(group)
+//        waitForExpectations(timeout: 3)
+//
+//        XCTAssertTrue(didExecuteOnDesiredQueue.access, "execute() did not execute on the desired underlyingQueue")
+//        PKAssertProcedureFinished(group)
+//        PKAssertProcedureFinished(child)
+//    }
 }
 
 // MARK: - Error Tests
