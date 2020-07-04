@@ -253,47 +253,47 @@ class ExecutionTests: ProcedureKitTestCase {
         XCTAssertNil(weakQueue)
     }
 
-    func test__procedure_executes_on_underlying_queue_of_procedurequeue() {
-        // If a Procedure is added to a ProcedureQueue with an `underlyingQueue` configured,
-        // the Procedure's `execute()` function should run on the underlyingQueue.
-
-        class TestExecuteOnUnderlyingQueueProcedure: Procedure {
-
-            public typealias Block = () -> Void
-            private let block: Block
-
-            public init(block: @escaping Block) {
-                self.block = block
-                super.init()
-            }
-
-            open override func execute() {
-                block()
-                finish()
-            }
-        }
-
-        let customDispatchQueueLabel = "run.kit.procedure.ProcedureKit.Tests.TestUnderlyingQueue"
-        let customDispatchQueue = DispatchQueue(label: customDispatchQueueLabel, attributes: [.concurrent])
-        let customScheduler = ProcedureKit.Scheduler(queue: customDispatchQueue)
-
-        let procedureQueue = ProcedureQueue()
-        procedureQueue.underlyingQueue = customDispatchQueue
-
-        let didExecuteOnDesiredQueue = Protector(false)
-        let procedure = TestExecuteOnUnderlyingQueueProcedure {
-            // inside execute()
-            if customScheduler.isOnScheduledQueue {
-                didExecuteOnDesiredQueue.overwrite(with: true)
-            }
-        }
-
-        addCompletionBlockTo(procedure: procedure)
-        procedureQueue.addOperation(procedure)
-        waitForExpectations(timeout: 3)
-
-        XCTAssertTrue(didExecuteOnDesiredQueue.access, "execute() did not execute on the desired underlyingQueue")
-    }
+//    func test__procedure_executes_on_underlying_queue_of_procedurequeue() {
+//        // If a Procedure is added to a ProcedureQueue with an `underlyingQueue` configured,
+//        // the Procedure's `execute()` function should run on the underlyingQueue.
+//
+//        class TestExecuteOnUnderlyingQueueProcedure: Procedure {
+//
+//            public typealias Block = () -> Void
+//            private let block: Block
+//
+//            public init(block: @escaping Block) {
+//                self.block = block
+//                super.init()
+//            }
+//
+//            open override func execute() {
+//                block()
+//                finish()
+//            }
+//        }
+//
+//        let customDispatchQueueLabel = "run.kit.procedure.ProcedureKit.Tests.TestUnderlyingQueue"
+//        let customDispatchQueue = DispatchQueue(label: customDispatchQueueLabel, attributes: [.concurrent])
+//        let customScheduler = ProcedureKit.Scheduler(queue: customDispatchQueue)
+//
+//        let procedureQueue = ProcedureQueue()
+//        procedureQueue.underlyingQueue = customDispatchQueue
+//
+//        let didExecuteOnDesiredQueue = Protector(false)
+//        let procedure = TestExecuteOnUnderlyingQueueProcedure {
+//            // inside execute()
+//            if customScheduler.isOnScheduledQueue {
+//                didExecuteOnDesiredQueue.overwrite(with: true)
+//            }
+//        }
+//
+//        addCompletionBlockTo(procedure: procedure)
+//        procedureQueue.addOperation(procedure)
+//        waitForExpectations(timeout: 3)
+//
+//        XCTAssertTrue(didExecuteOnDesiredQueue.access, "execute() did not execute on the desired underlyingQueue")
+//    }
 }
 
 import Dispatch
